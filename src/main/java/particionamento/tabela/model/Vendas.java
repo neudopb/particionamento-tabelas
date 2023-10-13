@@ -11,10 +11,9 @@ import java.time.LocalDate;
 public class Vendas {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "vendas_generator")
-    @SequenceGenerator(name = "vendas_generator", sequenceName = "vendas_seq")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String produto;
     private BigDecimal valor;
-    private LocalDate data;
+    private LocalDate createdAt;
 }

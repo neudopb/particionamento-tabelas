@@ -1,44 +1,29 @@
+-- Particionamento declarativo - LIST
 CREATE TABLE tarefa (
     id SERIAL,
     descricao VARCHAR(255),
     status VARCHAR(50),
 
-    PRIMARY KEY(id)
-);
-CREATE TABLE tarefa_start (
-    CHECK (status = 'START')
-) INHERITS (tarefa);
+    PRIMARY KEY(id, status)
+) PARTITION BY LIST(status);
 
-CREATE TABLE tarefa_progress (
-    CHECK (status = 'IN_PROGRESS')
-) INHERITS (tarefa);
+CREATE INDEX idx_tarefa ON tarefa (status);
 
-CREATE TABLE tarefa_done (
-    CHECK (status = 'DONE')
-) INHERITS (tarefa);
+CREATE TABLE tarefa_start PARTITION OF tarefa
+	FOR VALUES IN ('START');
 
-CREATE OR REPLACE FUNCTION tarefa_function()
-RETURNS TRIGGER AS $$
-DECLARE
-    new_id BIGINT;
-BEGIN
-    IF NEW.status = 'START' THEN
-        INSERT INTO tarefa_start (descricao, status) VALUES (NEW.descricao, NEW.status) RETURNING id INTO new_id;
-    ELSIF NEW.status = 'IN_PROGRESS' THEN
-        INSERT INTO tarefa_progress (descricao, status) VALUES (NEW.descricao, NEW.status) RETURNING id INTO new_id;
-    ELSIF NEW.status = 'DONE' THEN
-        INSERT INTO tarefa_done (descricao, status) VALUES (NEW.descricao, NEW.status) RETURNING id INTO new_id;
-    ELSE
-        RAISE EXCEPTION 'Status desconhecido';
-    END IF;
+CREATE TABLE tarefa_progress PARTITION OF tarefa
+	FOR VALUES IN ('IN_PROGRESS');
 
-    NEW.id = new_id;
+CREATE TABLE tarefa_done PARTITION OF tarefa
+	FOR VALUES IN ('DONE');
 
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
 
-CREATE TRIGGER tarefa_trigger
-BEFORE INSERT ON tarefa
-FOR EACH ROW
-EXECUTE FUNCTION tarefa_function();
+INSERT INTO public.tarefa(descricao, status)
+VALUES ('Tarefa 1', 'START'),
+	('Tarefa 2', 'IN_PROGRESS'),
+	('Tarefa 3', 'DONE'),
+	('Tarefa 4', 'START'),
+	('Tarefa 5', 'IN_PROGRESS'),
+	('Tarefa 6', 'DONE'),
+	('Tarefa 7', 'DONE');
